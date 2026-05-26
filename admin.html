@@ -6,6 +6,7 @@
   <title>Winterfell Admin – Full Features</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    /* Same styles as before – keep all */
     :root {
       --primary: #1a1a1a;
       --secondary: #0066ff;
@@ -157,7 +158,7 @@
   <div class="form-group full variants-section"><h4>Product Variants (RAM/Storage)</h4><div id="variantsContainer"></div><button class="add-variant-btn" onclick="addVariant()">+ Add Variant</button></div>
 </div></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeProductModal()">Cancel</button><button class="btn btn-blue" id="saveProductBtn" onclick="saveProduct()">Save Product</button></div></div></div>
 
-<!-- Slide Modal (short) -->
+<!-- Slide Modal -->
 <div class="modal-overlay" id="slideModal"><div class="modal"><div class="modal-header"><h3>Hero Slide</h3><button class="modal-close" onclick="closeSlideModal()">×</button></div><div class="modal-body"><div class="form-grid"><div class="form-group full"><div class="image-upload-area"><input type="file" id="slideImageInput" accept="image/*" onchange="handleSlideImageSelect(event)"><div><i class="fas fa-image"></i></div><div>Click to upload</div></div><img id="slideImagePreview" style="width:100px;margin-top:12px;display:none;"></div><div class="form-group full"><input type="text" id="sTitle" placeholder="Title"></div><div class="form-group full"><input type="text" id="sSubtitle" placeholder="Subtitle"></div><div class="form-group"><input type="text" id="sCta" value="Shop Now"></div><div class="form-group"><input type="number" id="sOrder" value="1"></div></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeSlideModal()">Cancel</button><button class="btn btn-blue" onclick="saveSlide()">Save</button></div></div></div>
 
 <!-- Collection Modal -->
@@ -170,7 +171,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBOzQLCgmKOFpyNnKXc0gZ-deCpNIqhn60",
@@ -191,7 +192,7 @@
   let editingProductId = null, editingSlideId = null, editingCollectionId = null;
   let pendingImageUrls = [], productColors = [], productVariants = [];
 
-  // Expose functions
+  // Expose functions globally
   window.doLogin = doLogin; window.doLogout = doLogout; window.switchTab = switchTab;
   window.openAddProduct = openAddProduct; window.closeProductModal = closeProductModal;
   window.openEditProduct = openEditProduct; window.saveProduct = saveProduct;
@@ -341,7 +342,6 @@
 
   function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('open'); pendingDeleteId = null; }
 
-  // Product form functions (same as before)
   function openAddProduct() {
     editingProductId = null;
     pendingImageUrls = [];
@@ -570,7 +570,7 @@
 
   function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m) { if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m; }); }
 
-  // Slides functions (simplified, works)
+  // Slides functions
   function openAddSlide() { editingSlideId = null; pendingSlideImageUrl = ''; document.getElementById('sTitle').value = ''; document.getElementById('sSubtitle').value = ''; document.getElementById('sCta').value = 'Shop Now'; document.getElementById('sOrder').value = allSlides.length+1; document.getElementById('slideImagePreview').style.display='none'; document.getElementById('slideModal').classList.add('open'); }
   function editSlide(docId) { const s = allSlides.find(x=>x._docId===docId); if(!s) return; editingSlideId=docId; pendingSlideImageUrl=s.image||''; document.getElementById('sTitle').value=s.title||''; document.getElementById('sSubtitle').value=s.subtitle||''; document.getElementById('sCta').value=s.cta||'Shop Now'; document.getElementById('sOrder').value=s.order||1; if(s.image){ document.getElementById('slideImagePreview').src=s.image; document.getElementById('slideImagePreview').style.display='block'; } document.getElementById('slideModal').classList.add('open'); }
   function closeSlideModal() { document.getElementById('slideModal').classList.remove('open'); }
@@ -579,7 +579,7 @@
   async function deleteSlide(docId) { if(!confirm('Delete this slide?')) return; await deleteDoc(doc(db,"heroSlides",docId)); allSlides=allSlides.filter(s=>s._docId!==docId); renderSlides(); renderStats(); showToast('Deleted','success'); }
   function renderSlides() { const list=document.getElementById('slidesList'); if(!allSlides.length){ list.innerHTML='<div class="empty-state">No slides</div>'; return; } list.innerHTML=allSlides.map(s=>`<div class="slide-card"><img src="${s.image||''}"><div><strong>${s.title}</strong><br>${s.subtitle||''}</div><div><button class="btn-outline" onclick="editSlide('${s._docId}')">Edit</button> <button class="btn-red" onclick="deleteSlide('${s._docId}')">Delete</button></div></div>`).join(''); }
 
-  // Collections
+  // Collections functions
   function openEditCollection(docId) { const c=allCollections.find(x=>x._docId===docId); if(!c) return; editingCollectionId=docId; pendingCollImageUrl=c.image||''; document.getElementById('cName').value=c.name||''; if(c.image){ document.getElementById('collImagePreview').src=c.image; document.getElementById('collImagePreview').style.display='block'; } document.getElementById('collectionModal').classList.add('open'); }
   function closeCollectionModal() { document.getElementById('collectionModal').classList.remove('open'); }
   async function handleCollImageSelect(e) { const file=e.target.files[0]; if(!file) return; try{ const url=await uploadToCloudinary(file); pendingCollImageUrl=url; document.getElementById('collImagePreview').src=url; document.getElementById('collImagePreview').style.display='block'; showToast('Image uploaded','success'); } catch(err){ showToast('Upload failed','error'); } }
