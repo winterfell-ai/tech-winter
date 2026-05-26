@@ -28,7 +28,7 @@
     .cart-badge{position:relative}
     .cart-badge::after{content:attr(data-count);position:absolute;top:-8px;right:-8px;background:#ff3333;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
     .hero-slider{position:relative;height:500px;background:#f5f5f5;overflow:hidden}
-    .hero-slide{display:none;position:absolute;inset:0;background-size:cover;background-position:center;animation:fadeIn 0.5s}
+    .hero-slide{display:none;position:absolute;inset:0;background-size:cover;background-position:center}
     .hero-slide.active{display:flex;align-items:center}
     .hero-slide::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,0.3)}
     .hero-content{position:relative;z-index:2;color:#fff;padding:60px;max-width:600px}
@@ -146,6 +146,10 @@
     .lightbox img{max-width:90vw;max-height:90vh;object-fit:contain;cursor:zoom-in}
     .lightbox img.zoomed{transform:scale(1.5);cursor:zoom-out}
     .lightbox-close{position:absolute;top:20px;right:30px;color:#fff;font-size:32px;cursor:pointer;background:none;border:none}
+    /* Brand logo card styling */
+    .brand-card{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+    .brand-logo{width:100px;height:100px;object-fit:contain;margin-bottom:12px}
+    .brand-name{font-weight:600;margin-top:8px}
     @media (max-width:768px){
       .nav-inner{flex-wrap:wrap;height:auto}
       .nav-search{max-width:100%;order:3;flex-basis:100%}
@@ -159,6 +163,7 @@
       .topbar{flex-direction:column;text-align:center}
       .topbar-links{justify-content:center}
       .whatsapp-chooser{right:16px;bottom:80px;left:16px;width:auto}
+      .brand-logo{width:70px;height:70px}
     }
   </style>
 </head>
@@ -244,6 +249,28 @@
   window.allCollections = [];
   window.allSlides = [];
   window.businessInfo = {};
+
+  // ============================================================
+  // BRAND LOGOS MAPPING – Replace these URLs with your actual logo images
+  // ============================================================
+  const brandLogos = {
+    // Phones
+    "Apple": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
+    "Samsung": "https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg",
+    "Xiaomi": "https://upload.wikimedia.org/wikipedia/commons/2/29/Xiaomi_logo.svg",
+    "Infinix": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Infinix_logo.png/200px-Infinix_logo.png",
+    "Tecno": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Tecno_Mobile_Logo.svg/200px-Tecno_Mobile_Logo.svg.png",
+    "Itel": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Itel_Mobile_Logo.png/200px-Itel_Mobile_Logo.png",
+    // Laptops
+    "HP": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/HP_logo_2012.svg/200px-HP_logo_2012.svg.png",
+    "Dell": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Dell_logo_2016.svg/200px-Dell_logo_2016.svg.png",
+    "Lenovo": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Lenovo_logo_2015.svg",
+    // Add more brands as needed
+  };
+  // Fallback: if no logo found, show the brand name as text
+  function getBrandLogo(brandName) {
+    return brandLogos[brandName] || null;
+  }
 
   async function loadSiteData() {
     try {
@@ -372,8 +399,74 @@
   function renderHome() { hideAllViews(); document.getElementById('homeView').classList.remove('hidden'); renderCollections(); currentView='home'; window.scrollTo({top:0,behavior:'smooth'}); }
   function hideAllViews() { ['homeView','collectionView','brandView','productView','searchView'].forEach(id=>document.getElementById(id).classList.add('hidden')); }
   function renderCollections() { const grid = document.getElementById('collectionsGrid'); grid.innerHTML = window.allCollections.map(col=>`<div class="collection-card" onclick="goToCollection('${col.id}')"><img src="${col.image}"><div class="collection-overlay">${col.name}</div></div>`).join(''); }
-  function goToCollection(catId) { const col = window.allCollections.find(c=>c.id===catId); if(!col) return; currentCategory=catId; currentBrand=null; hideAllViews(); document.getElementById('collectionView').classList.remove('hidden'); document.getElementById('collectionTitle').textContent=col.name; document.getElementById('collectionBreadcrumb').innerHTML=`<a onclick="goHome()">Home</a><span>›</span><span>${col.name}</span>`; const content=document.getElementById('collectionContent'); if(col.hasBrands){ content.innerHTML=`<div class="products-grid">${col.brands.map(b=>`<div class="product-card" onclick="goToBrand('${catId}','${b}')"><div class="product-image" style="background:#f0f0f0;display:flex;align-items:center;justify-content:center;"><i class="fas fa-${catId==='PHONES'?'mobile-alt':'laptop'}" style="font-size:48px;color:#999;"></i><div style="font-weight:600;margin-top:8px;">${b}</div></div></div>`).join('')}</div>`; } else { const products = window.allProducts.filter(p=>p.category===catId); renderProductGrid(products,'collectionContent'); } window.scrollTo({top:0,behavior:'smooth'}); }
-  function goToBrand(catId,brand) { currentCategory=catId; currentBrand=brand; hideAllViews(); document.getElementById('brandView').classList.remove('hidden'); const col = window.allCollections.find(c=>c.id===catId); document.getElementById('brandTitle').textContent=`${col.name} - ${brand}`; document.getElementById('brandBreadcrumb').innerHTML=`<a onclick="goHome()">Home</a><span>›</span><a onclick="goToCollection('${catId}')">${col.name}</a><span>›</span><span>${brand}</span>`; const products = window.allProducts.filter(p=>p.category===catId && p.brand===brand); renderProductGrid(products,'brandProducts'); window.scrollTo({top:0,behavior:'smooth'}); }
+  
+  // Updated goToCollection to display brand logos
+  function goToCollection(catId) {
+    const col = window.allCollections.find(c=>c.id===catId);
+    if(!col) return;
+    currentCategory=catId;
+    currentBrand=null;
+    hideAllViews();
+    document.getElementById('collectionView').classList.remove('hidden');
+    document.getElementById('collectionTitle').textContent=col.name;
+    document.getElementById('collectionBreadcrumb').innerHTML=`<a onclick="goHome()">Home</a><span>›</span><span>${col.name}</span>`;
+    const content=document.getElementById('collectionContent');
+    if(col.hasBrands && col.brands && col.brands.length){
+      // Display brands with logos
+      content.innerHTML = `<div class="products-grid">${col.brands.map(brand => {
+        const logoUrl = window.getBrandLogo ? window.getBrandLogo(brand) : null;
+        if(logoUrl) {
+          return `<div class="product-card" onclick="goToBrand('${catId}','${brand}')">
+                    <div class="brand-card">
+                      <img class="brand-logo" src="${logoUrl}" alt="${brand}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                      <div class="brand-name" style="display:none;">${brand}</div>
+                      <div class="brand-name">${brand}</div>
+                    </div>
+                  </div>`;
+        } else {
+          return `<div class="product-card" onclick="goToBrand('${catId}','${brand}')">
+                    <div class="brand-card">
+                      <i class="fas fa-building" style="font-size:48px; color:#999; margin-bottom:12px;"></i>
+                      <div class="brand-name">${brand}</div>
+                    </div>
+                  </div>`;
+        }
+      }).join('')}</div>`;
+    } else {
+      const products = window.allProducts.filter(p=>p.category===catId);
+      renderProductGrid(products,'collectionContent');
+    }
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  
+  // Expose getBrandLogo to the global scope for the module to use
+  window.getBrandLogo = function(brandName) {
+    const logos = {
+      "Apple": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
+      "Samsung": "https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg",
+      "Xiaomi": "https://upload.wikimedia.org/wikipedia/commons/2/29/Xiaomi_logo.svg",
+      "Infinix": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Infinix_logo.png/200px-Infinix_logo.png",
+      "Tecno": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Tecno_Mobile_Logo.svg/200px-Tecno_Mobile_Logo.svg.png",
+      "Itel": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Itel_Mobile_Logo.png/200px-Itel_Mobile_Logo.png",
+      "HP": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/HP_logo_2012.svg/200px-HP_logo_2012.svg.png",
+      "Dell": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Dell_logo_2016.svg/200px-Dell_logo_2016.svg.png",
+      "Lenovo": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Lenovo_logo_2015.svg"
+    };
+    return logos[brandName] || null;
+  };
+
+  function goToBrand(catId,brand) {
+    currentCategory=catId; currentBrand=brand;
+    hideAllViews();
+    document.getElementById('brandView').classList.remove('hidden');
+    const col = window.allCollections.find(c=>c.id===catId);
+    document.getElementById('brandTitle').textContent=`${col.name} - ${brand}`;
+    document.getElementById('brandBreadcrumb').innerHTML=`<a onclick="goHome()">Home</a><span>›</span><a onclick="goToCollection('${catId}')">${col.name}</a><span>›</span><span>${brand}</span>`;
+    const products = window.allProducts.filter(p=>p.category===catId && p.brand===brand);
+    renderProductGrid(products,'brandProducts');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  
   function renderProductGrid(products,containerId) {
     const container = document.getElementById(containerId);
     if(!products.length){ container.innerHTML='<p style="grid-column:1/-1;text-align:center;padding:40px;">No products found</p>'; return; }
