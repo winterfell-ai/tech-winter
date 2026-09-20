@@ -87,7 +87,7 @@
 </head>
 <body>
 <div id="adminLoadingScreen"><div class="spinner"></div><p>Connecting to database...</p></div>
-<div id="loginScreen"><div class="login-box"><img src="https://i.postimg.cc/5y3jC6hc/Whats-App-Image-2026-05-19-at-4-34-13-PM.jpg"><h2>Admin Panel</h2><p style="color:#666;font-size:13px;margin-bottom:16px;">Winterfell Technologies</p><input type="email" id="loginEmail" placeholder="Admin email" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;font-size:14px;"><input type="password" id="loginPassword" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;font-size:14px;"><button class="login-btn" onclick="doLogin()">Sign In</button><p class="login-error" id="loginError" style="color:red;display:none;margin-top:10px;font-size:13px;"></p></div></div>
+<div id="loginScreen"><div class="login-box"><img src="https://i.postimg.cc/5y3jC6hc/Whats-App-Image-2026-05-19-at-4-34-13-PM.jpg"><h2>Admin Panel</h2><p style="color:#666;font-size:13px;margin-bottom:16px;">Winterfell Technologies</p><input type="email" id="loginEmail" placeholder="Admin email" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;font-size:14px;font-family:inherit;outline:none;"><input type="password" id="loginPassword" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;font-size:14px;font-family:inherit;outline:none;"><button class="login-btn" onclick="doLogin()">Sign In</button><p id="loginError" style="color:red;display:none;margin-top:10px;font-size:13px;"></p></div></div>
 
 <div class="admin-topbar"><div class="admin-topbar-left"><img src="https://i.postimg.cc/5y3jC6hc/Whats-App-Image-2026-05-19-at-4-34-13-PM.jpg"><span>WINTERFELL<span style="color:#ff3333">TECH</span></span><small>ADMIN</small></div><div><a href="index.html" target="_blank" style="color:rgba(255,255,255,0.7);margin-right:16px;"><i class="fas fa-external-link-alt"></i> View Store</a><button class="logout-btn" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div></div>
 
@@ -591,27 +591,22 @@
 
     window.doLogin = async function() {
       const email = document.getElementById('loginEmail').value.trim();
-      const password = document.getElementById('loginPassword').value;
+      const pw = document.getElementById('loginPassword').value;
       const errEl = document.getElementById('loginError');
       errEl.style.display = 'none';
-      if(!email || !password) { errEl.textContent = 'Please enter email and password.'; errEl.style.display = 'block'; return; }
+      if(!email || !pw){ errEl.textContent='Please enter email and password.'; errEl.style.display='block'; return; }
       try {
-        const { initializeApp: _initApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-        const { getAuth, signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
-        const _app = _initApp(firebaseConfig, 'auth-instance');
-        const auth = getAuth(_app);
-        await signInWithEmailAndPassword(auth, email, password);
+        const { initializeApp: ia } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+        const { getAuth, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+        let authApp;
+        try { authApp = ia(firebaseConfig, 'auth'); } catch(e) { const {getApp} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'); authApp = getApp('auth'); }
+        const auth = getAuth(authApp);
+        await signInWithEmailAndPassword(auth, email, pw);
         document.getElementById('loginScreen').style.display = 'none';
         await initFirebase();
       } catch(err) {
-        const msgs = {
-          'auth/user-not-found': 'No admin account found.',
-          'auth/wrong-password': 'Incorrect password.',
-          'auth/invalid-credential': 'Incorrect email or password.',
-          'auth/invalid-email': 'Please enter a valid email.',
-          'auth/too-many-requests': 'Too many attempts. Try again later.'
-        };
-        errEl.textContent = msgs[err.code] || 'Login failed: ' + err.message;
+        const msgs = {'auth/user-not-found':'No account found.','auth/wrong-password':'Incorrect password.','auth/invalid-credential':'Incorrect email or password.','auth/invalid-email':'Enter a valid email.','auth/too-many-requests':'Too many attempts. Try later.'};
+        errEl.textContent = msgs[err.code] || ('Error: ' + err.message);
         errEl.style.display = 'block';
       }
     };
