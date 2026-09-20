@@ -596,10 +596,9 @@
       errEl.style.display = 'none';
       if(!email || !pw){ errEl.textContent='Please enter email and password.'; errEl.style.display='block'; return; }
       try {
-        const { initializeApp: ia } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+        const { initializeApp: ia, getApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
         const { getAuth, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-        let authApp;
-        try { authApp = ia(firebaseConfig, 'auth'); } catch(e) { const {getApp} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'); authApp = getApp('auth'); }
+        let authApp; try { authApp = ia(firebaseConfig, 'auth'); } catch(e) { authApp = getApp('auth'); }
         const auth = getAuth(authApp);
         await signInWithEmailAndPassword(auth, email, pw);
         document.getElementById('loginScreen').style.display = 'none';
